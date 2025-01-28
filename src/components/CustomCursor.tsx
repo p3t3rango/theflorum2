@@ -4,39 +4,37 @@ import { useEffect, useState } from 'react'
 
 export function CustomCursor() {
   const [position, setPosition] = useState({ x: 0, y: 0 })
-  const [isHovering, setIsHovering] = useState(false)
+  const [isMobile, setIsMobile] = useState(true) // Default to true to prevent flicker
 
   useEffect(() => {
-    const updatePosition = (e: MouseEvent) => {
-      setPosition({ x: e.clientX, y: e.clientY })
+    // Check if device is mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
     }
+    
+    checkMobile() // Initial check
+    window.addEventListener('resize', checkMobile)
 
-    const handleMouseOver = (e: MouseEvent) => {
-      if ((e.target as HTMLElement).tagName.toLowerCase() === 'button' ||
-          (e.target as HTMLElement).tagName.toLowerCase() === 'input' ||
-          (e.target as HTMLElement).tagName.toLowerCase() === 'textarea') {
-        setIsHovering(true)
+    // Only add mouse tracking if not mobile
+    if (!isMobile) {
+      const updatePosition = (e: MouseEvent) => {
+        setPosition({ x: e.clientX, y: e.clientY })
+      }
+      window.addEventListener('mousemove', updatePosition)
+      return () => {
+        window.removeEventListener('mousemove', updatePosition)
+        window.removeEventListener('resize', checkMobile)
       }
     }
 
-    const handleMouseOut = () => {
-      setIsHovering(false)
-    }
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [isMobile])
 
-    window.addEventListener('mousemove', updatePosition)
-    document.addEventListener('mouseover', handleMouseOver)
-    document.addEventListener('mouseout', handleMouseOut)
-
-    return () => {
-      window.removeEventListener('mousemove', updatePosition)
-      document.removeEventListener('mouseover', handleMouseOver)
-      document.removeEventListener('mouseout', handleMouseOut)
-    }
-  }, [])
+  if (isMobile) return null
 
   return (
     <div 
-      className={`custom-cursor ${isHovering ? 'hover' : ''}`}
+      className="custom-cursor"
       style={{ 
         left: `${position.x}px`, 
         top: `${position.y}px`

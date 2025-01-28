@@ -115,21 +115,30 @@ export default function HomePage() {
   const [isDissolving, setIsDissolving] = useState(false)
   
   const typewriterEffect = (fullText: string, onComplete?: () => void) => {
-    let currentIndex = 0
-    setText('')
-    setTypewriterComplete(false)
-    
-    const intervalId = setInterval(() => {
-      if (currentIndex <= fullText.length) {
-        setText(prev => fullText.slice(0, currentIndex))
-        currentIndex++
-      } else {
+    try {
+      let currentIndex = 0
+      setText('')
+      setTypewriterComplete(false)
+      
+      const intervalId = setInterval(() => {
+        if (currentIndex <= fullText.length) {
+          setText(prev => fullText.slice(0, currentIndex))
+          currentIndex++
+        } else {
+          clearInterval(intervalId)
+          setTypewriterComplete(true)
+          onComplete?.()
+        }
+      }, 25)
+      return () => {
         clearInterval(intervalId)
         setTypewriterComplete(true)
-        onComplete?.()
       }
-    }, 25)
-    return () => clearInterval(intervalId)
+    } catch (error) {
+      console.error('Typewriter effect error:', error)
+      setText(fullText)
+      setTypewriterComplete(true)
+    }
   }
 
   const generateImagePrompt = async (char: Character) => {
@@ -350,7 +359,13 @@ export default function HomePage() {
 
     // Phase 4: Name Input
     if (phase === 4) {
-      setText('What is your name?')
+      try {
+        setText('What is your name?')
+        setTypewriterComplete(true)
+      } catch (error) {
+        console.error('Error in name phase:', error)
+        setText('Please enter your name')
+      }
     }
 
     // Phase 5: Role Selection

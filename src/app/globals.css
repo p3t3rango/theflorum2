@@ -92,12 +92,14 @@ body {
 }
 
 /* Update cursor styles */
-* {
-  cursor: none !important; /* Force no cursor on all elements */
-}
-
-button, input, textarea, a {
-  cursor: none !important; /* Explicitly remove cursor from interactive elements */
+@media (min-width: 768px) {
+  * {
+    cursor: none !important;
+  }
+  
+  button, input, textarea, a {
+    cursor: none !important;
+  }
 }
 
 .custom-cursor {
