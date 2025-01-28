@@ -791,17 +791,17 @@ export default function HomePage() {
       {!isMobile && <CustomCursor />}
       <DigitalRain />
       <BackgroundMusic />
-      <div className="relative z-10 flex min-h-screen min-h-[-webkit-fill-available] flex-col items-center justify-start md:justify-center px-4 py-6 md:p-24 overflow-x-hidden">
-        <div className="w-full max-w-[95vw] md:max-w-2xl mt-4 md:mt-0">
+      <div className="relative z-10 flex min-h-screen min-h-[-webkit-fill-available] flex-col items-center justify-center px-4 py-6 md:p-24 overflow-x-hidden">
+        <div className="w-full max-w-[95vw] md:max-w-2xl">
           {!uiState.isGeneratingImage && !uiState.isGeneratingPrompt && phase !== 12 && (
-            <h1 className="text-4xl font-bold font-mono text-center mb-8 tracking-wide">
+            <h1 className={`text-4xl font-bold font-mono text-center mb-8 tracking-wide ${phase <= 3 ? 'mt-0' : '-mt-20 md:mt-0'}`}>
               {text}
               {!uiState.typewriterComplete && <span className="animate-blink">|</span>}
             </h1>
           )}
           
           {phase >= 4 && phase <= 11 && (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-0">
               {renderInput()}
               {phase !== 11 && phase !== 10 && !uiState.isGeneratingImage && !uiState.isGeneratingPrompt && (
                 <button
