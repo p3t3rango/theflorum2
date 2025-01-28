@@ -814,7 +814,7 @@ export default function HomePage() {
             </form>
           )}
 
-          {phase === 12 && renderProfile()}
+          {phase === 12 && renderProfile}
         </div>
       </div>
     </>
