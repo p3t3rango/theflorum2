@@ -2,134 +2,159 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-interface Section {
-  type: 'intro' | 'verse' | 'bridge' | 'chorus' | 'outro'
-  duration: number
-}
-
 export function BackgroundMusic() {
   const [isPlaying, setIsPlaying] = useState(false)
   const ctxRef = useRef<AudioContext | null>(null)
 
   useEffect(() => {
-    // Create AudioContext only when needed
     if (!ctxRef.current) {
       ctxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
     }
 
     const ctx = ctxRef.current
-    if (!ctx) return // Early return if context isn't available
+    if (!ctx) return
 
-    // Create reverb impulse
-    async function createReverb() {
-      const seconds = 2
-      const decay = 2
-      const sampleRate = ctx.sampleRate
-      const length = sampleRate * seconds
-      const impulse = ctx.createBuffer(2, length, sampleRate)
-      const left = impulse.getChannelData(0)
-      const right = impulse.getChannelData(1)
+    // Update the progression to be more sci-fi/noir
+    const progression = {
+      chords: [
+        [60, 67, 70, 76],  // Cm9
+        [58, 65, 69, 74],  // Bbm9
+        [56, 63, 67, 72],  // Abm9
+        [61, 68, 71, 77]   // C#m9
+      ].map(chord => chord.map(midiToFreq)),
+      bass: [36, 34, 32, 37].map(midiToFreq)  // Lower octave for more depth
+    }
 
-      for (let i = 0; i < length; i++) {
-        const n = i / length
-        left[i] = (Math.random() * 2 - 1) * Math.pow(1 - n, decay)
-        right[i] = (Math.random() * 2 - 1) * Math.pow(1 - n, decay)
-      }
+    // Pentatonic scale for melody
+    const scale = [60, 62, 65, 67, 72, 74, 77, 79, 84, 86, 89].map(midiToFreq)
 
-      return impulse
+    function midiToFreq(midi: number): number {
+      return 440 * Math.pow(2, (midi - 69) / 12)
     }
 
     function createSynth(type: OscillatorType = 'sine') {
-      if (!ctx) return null // Guard clause
+      if (!ctx) return null
 
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
       const filter = ctx.createBiquadFilter()
       const reverb = ctx.createConvolver()
+      const delay = ctx.createDelay(5.0)
+      const delayGain = ctx.createGain()
+      
+      // Enhanced reverb with longer tail
+      const reverbLength = 5
+      const rate = ctx.sampleRate
+      const impulse = ctx.createBuffer(2, rate * reverbLength, rate)
+      for (let channel = 0; channel < 2; channel++) {
+        const data = impulse.getChannelData(channel)
+        for (let i = 0; i < data.length; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (rate * reverbLength / 8))
+        }
+      }
+      reverb.buffer = impulse
 
-      osc.type = type
-      osc.frequency.value = 220 // Base frequency
-      gain.gain.value = 0.1 // Lower volume
-      filter.frequency.value = 700
-      filter.Q.value = 1
+      // Configure delay
+      delay.delayTime.value = 0.75
+      delayGain.gain.value = 0.3
 
-      createReverb().then(impulse => {
-        reverb.buffer = impulse
-      })
+      // Configure filter for darker tone
+      filter.type = 'lowpass'
+      filter.frequency.value = type === 'sine' ? 1500 : 800
+      filter.Q.value = 2
 
-      osc.connect(filter)
+      // Connect nodes with delay feedback loop
+      osc.connect(gain)
+      gain.connect(filter)
       filter.connect(reverb)
-      reverb.connect(gain)
-      gain.connect(ctx.destination)
+      filter.connect(delay)
+      delay.connect(delayGain)
+      delayGain.connect(delay)
+      delay.connect(ctx.destination)
+      reverb.connect(ctx.destination)
 
-      return { osc, gain, filter, reverb }
+      return { osc, gain, filter }
     }
 
-    let synths: Array<ReturnType<typeof createSynth>> = []
+    let activeOscillators: { osc: OscillatorNode, gain: GainNode }[] = []
+
+    function playPad(chord: number[], time: number, duration: number, section: string) {
+      if (!ctx) return
+
+      const volume = section === 'chorus' ? 0.04 : 0.03
+      chord.forEach((freq, i) => {
+        const synth = createSynth('sine')
+        if (!synth) return
+
+        synth.osc.frequency.value = freq
+        const staggeredTime = time + (i * 0.2)
+        const fadeInTime = 0.5
+
+        synth.gain.gain.setValueAtTime(0, staggeredTime)
+        synth.gain.gain.linearRampToValueAtTime(volume, staggeredTime + fadeInTime)
+        synth.gain.gain.linearRampToValueAtTime(0, time + duration)
+
+        synth.osc.start(staggeredTime)
+        synth.osc.stop(time + duration)
+        activeOscillators.push(synth)
+      })
+    }
+
+    function playBass(freq: number, time: number, duration: number, pattern: string) {
+      if (!ctx) return
+
+      const synth = createSynth('sine')
+      if (!synth) return
+
+      synth.osc.frequency.value = freq
+      const volume = 0.06
+
+      synth.gain.gain.setValueAtTime(0, time)
+      synth.gain.gain.linearRampToValueAtTime(volume, time + 0.05)
+      synth.gain.gain.linearRampToValueAtTime(0, time + duration)
+
+      synth.osc.start(time)
+      synth.osc.stop(time + duration)
+      activeOscillators.push(synth)
+    }
+
     let timeoutIds: NodeJS.Timeout[] = []
 
-    function startAmbience() {
-      if (!ctx) return // Guard clause
+    function playLoop(startTime: number) {
+      if (!ctx || !isPlaying) return
 
-      // Clear any existing timeouts
-      timeoutIds.forEach(id => clearTimeout(id))
-      timeoutIds = []
-
-      // Stop and disconnect any existing synths
-      synths.forEach(synth => {
-        if (synth) {
-          synth.osc.stop()
-          synth.gain.disconnect()
-        }
-      })
-      synths = []
-
-      function playNote() {
-        const synth = createSynth()
-        if (!synth) return // Guard for null synth
-
-        synths.push(synth)
-        synth.osc.start()
-
-        // Random frequency between 220-440 Hz
-        synth.osc.frequency.value = 220 + Math.random() * 220
-
-        // Schedule next note
-        const nextNote = 2000 + Math.random() * 3000 // Random delay between 2-5 seconds
-        const timeoutId = setTimeout(playNote, nextNote)
-        timeoutIds.push(timeoutId)
-
-        // Fade out and cleanup after 4 seconds
-        setTimeout(() => {
-          if (synth.gain.gain.exponentialRampToValueAtTime) {
-            synth.gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2)
-          }
-          setTimeout(() => {
-            synth.gain.disconnect()
-            const index = synths.indexOf(synth)
-            if (index > -1) {
-              synths.splice(index, 1)
-            }
-          }, 2000)
-        }, 4000)
+      const barDuration = 6
+      const idx = Math.floor(startTime / barDuration) % progression.chords.length
+      
+      playPad(progression.chords[idx], startTime, barDuration, 'verse')
+      
+      const bassNote = progression.bass[idx]
+      for (let i = 0; i < 12; i++) {
+        playBass(bassNote, startTime + i * 0.5, 0.4, 'verse')
       }
 
-      // Start playing notes
-      playNote()
+      const timeoutId = setTimeout(() => {
+        playLoop(ctx.currentTime)
+      }, (barDuration - 0.1) * 1000)
+      
+      timeoutIds.push(timeoutId)
     }
 
     if (isPlaying) {
-      startAmbience()
+      playLoop(ctx.currentTime)
     }
 
     return () => {
-      // Cleanup
-      timeoutIds.forEach(id => clearTimeout(id))
-      synths.forEach(synth => {
-        if (synth) {
+      timeoutIds.forEach(clearTimeout)
+      activeOscillators.forEach(synth => {
+        try {
+          synth.osc.stop()
           synth.gain.disconnect()
+        } catch (e) {
+          // Ignore errors from already stopped oscillators
         }
       })
+      activeOscillators = []
     }
   }, [isPlaying])
 
