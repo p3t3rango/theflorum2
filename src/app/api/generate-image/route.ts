@@ -15,7 +15,10 @@ export async function POST(request: Request) {
     const { prompt } = await request.json()
     
     if (!prompt) {
-      throw new Error('No prompt provided')
+      return NextResponse.json(
+        { error: 'Prompt is required' },
+        { status: 400 }
+      )
     }
 
     console.log('Generating image with prompt:', prompt)
@@ -64,13 +67,10 @@ export async function POST(request: Request) {
       }, { status: 500 })
     }
   } catch (error) {
-    console.error('Request error:', error)
+    console.error('Image generation error:', error)
     return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Failed to process request',
-        details: JSON.stringify(error)
-      },
-      { status: 400 }
+      { error: 'Failed to generate image. Please try again.' },
+      { status: 500 }
     )
   }
 } 

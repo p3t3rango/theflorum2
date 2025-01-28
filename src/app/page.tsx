@@ -165,17 +165,17 @@ export default function HomePage() {
     // Start dissolve animation
     setIsDissolving(true)
     
-    // Wait for animation to complete
-    await new Promise(resolve => setTimeout(resolve, 800))
-    
-    // Clear the UI and start generation
-    setText('')
-    setInputValue('')
-    setIsGeneratingImage(true)
-    setTypewriterComplete(true)
-    setHasShownMessage(true)
-    
     try {
+      // Wait for animation to complete
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Clear the UI and start generation
+      setText('')
+      setInputValue('')
+      setIsGeneratingImage(true)
+      setTypewriterComplete(true)
+      setHasShownMessage(true)
+      
       const response = await fetch('/api/generate-image', {
         method: 'POST',
         headers: {
@@ -184,9 +184,10 @@ export default function HomePage() {
         body: JSON.stringify({ prompt })
       })
 
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate image')
+      const data = await response.json().catch(() => null)
+      
+      if (!response.ok || !data) {
+        throw new Error(data?.error || 'Failed to generate image. Please try again.')
       }
 
       // Wait for image to load
@@ -208,9 +209,10 @@ export default function HomePage() {
 
       // Move to profile phase
       setPhase(12)
+
     } catch (error) {
       console.error('Error details:', error)
-      alert(error instanceof Error ? error.message : 'Failed to generate image. Please try again.')
+      alert(error instanceof Error ? error.message : 'An error occurred while generating the image. Please try again.')
     } finally {
       setIsDissolving(false)
       setIsGeneratingImage(false)
