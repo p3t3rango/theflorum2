@@ -2,9 +2,12 @@ import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
 export async function POST(request: Request) {
+  console.log('Starting image generation...')
   console.log('API Key available:', !!process.env.OPENAI_API_KEY)
+  console.log('Organization ID available:', !!process.env.OPENAI_ORG_ID)
   
   if (!process.env.OPENAI_API_KEY) {
+    console.error('OpenAI API key missing')
     return NextResponse.json(
       { error: 'OpenAI API key not configured' },
       { status: 500 }
@@ -13,6 +16,7 @@ export async function POST(request: Request) {
 
   try {
     const { prompt } = await request.json()
+    console.log('Received prompt:', prompt)
     
     if (!prompt) {
       return NextResponse.json(
@@ -21,7 +25,7 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log('Generating image with prompt:', prompt)
+    console.log('Initializing OpenAI client...')
 
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
@@ -29,6 +33,7 @@ export async function POST(request: Request) {
     })
 
     try {
+      console.log('Calling OpenAI API...')
       const response = await openai.images.generate({
         model: "dall-e-3",
         prompt: prompt,
@@ -38,7 +43,7 @@ export async function POST(request: Request) {
         style: "vivid"
       })
 
-      console.log('DALL-E response:', response)
+      console.log('OpenAI response received:', !!response.data)
 
       if (!response.data?.[0]?.url) {
         throw new Error('No image URL in response')
