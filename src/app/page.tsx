@@ -113,6 +113,7 @@ export default function HomePage() {
   const [inputValue, setInputValue] = useState('')
   const [currentLoadingStep, setCurrentLoadingStep] = useState(0)
   const [isDissolving, setIsDissolving] = useState(false)
+  const [isMobile, setIsMobile] = useState(true)
   
   const typewriterEffect = (fullText: string, onComplete?: () => void) => {
     try {
@@ -142,7 +143,6 @@ export default function HomePage() {
   }
 
   const generateImagePrompt = async (char: Character) => {
-    // Move roleStyles outside try block so it's accessible in catch block
     const roleStyles = {
       'Kindred': 'ethereal aura, spiritual energy wisps, emotional resonance visualized as flowing light',
       'Lithian': 'crystalline formations, geometric patterns, ancient runes and glowing sigils',
@@ -171,7 +171,6 @@ export default function HomePage() {
       return data.prompt
     } catch (error) {
       console.error('Error:', error)
-      // Now roleStyles is accessible here
       return `A mystical ethereal portrait of ${char.name}, a ${char.role} in the Eternal Garden. 
       ${char.role ? `Incorporating ${roleStyles[char.role as keyof typeof roleStyles]}.` : ''}
       Physical traits: ${char.appearance?.features || ''}
@@ -185,14 +184,11 @@ export default function HomePage() {
   }
 
   const handleGenerateImage = async (prompt: string) => {
-    // Start dissolve animation
     setIsDissolving(true)
     
     try {
-      // Wait for animation to complete
       await new Promise(resolve => setTimeout(resolve, 800))
       
-      // Clear the UI and start generation
       setText('')
       setInputValue('')
       setIsGeneratingImage(true)
@@ -213,7 +209,6 @@ export default function HomePage() {
         throw new Error(data?.error || 'Failed to generate image. Please try again.')
       }
 
-      // Wait for image to load
       await new Promise((resolve, reject) => {
         const img = new Image()
         img.onload = () => {
@@ -230,7 +225,6 @@ export default function HomePage() {
         img.src = data.imageUrl
       })
 
-      // Move to profile phase
       setPhase(12)
 
     } catch (error) {
@@ -244,7 +238,6 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    // Phase 0: Initial Loading - Speed up
     if (phase === 0) {
       let currentIndex = 0
       const fullText = 'Loading Florum Protocol...'
@@ -256,11 +249,10 @@ export default function HomePage() {
           clearInterval(intervalId)
           setPhase(1)
         }
-      }, 70) // Faster typing (was 100)
+      }, 70)
       return () => clearInterval(intervalId)
     }
     
-    // Phase 1: Add glitch effect to "Loading complete"
     if (phase === 1) {
       const spiritInterval = setInterval(() => {
         setSpiritText(spiritTexts[Math.floor(Math.random() * spiritTexts.length)])
@@ -269,14 +261,14 @@ export default function HomePage() {
       const completedTimeout = setTimeout(() => {
         clearInterval(spiritInterval)
         setText('Loading complete')
-        setIsGlitching(true) // Add glitch effect
+        setIsGlitching(true)
         
         setTimeout(() => {
           setIsGlitching(false)
           setPhase(2)
-        }, 1500) // Shorter hold (was 2000)
+        }, 1500)
         
-      }, 2000) // Shorter loading time (was 3000)
+      }, 2000)
       
       return () => {
         clearInterval(spiritInterval)
@@ -284,7 +276,6 @@ export default function HomePage() {
       }
     }
     
-    // Phase 2: Shorter matrix effect
     if (phase === 2) {
       const fullText = 'Welcome to Florum Protocol'
       let currentIndex = 0
@@ -318,10 +309,10 @@ export default function HomePage() {
           })
 
           const progress = currentIndex / fullText.length
-          const increment = progress > 0.7 ? 0.4 : 0.6 // Faster progression
+          const increment = progress > 0.7 ? 0.4 : 0.6
           currentIndex += increment
 
-          if (currentIndex >= fullText.length + 6) { // Shorter end phase (was 8)
+          if (currentIndex >= fullText.length + 6) {
             isComplete = true
             setText(fullText)
             clearInterval(matrixInterval)
@@ -330,16 +321,15 @@ export default function HomePage() {
               setIsGlitching(true)
               setTimeout(() => {
                 setPhase(3)
-              }, 600) // Shorter glitch (was 800)
-            }, 300) // Shorter pause (was 400)
+              }, 600)
+            }, 300)
           }
         }
-      }, 45) // Slightly faster interval (was 50)
+      }, 45)
 
       return () => clearInterval(matrixInterval)
     }
 
-    // Phase 3: Second Spirit Loading
     if (phase === 3) {
       setIsGlitching(false)
       const spiritInterval = setInterval(() => {
@@ -357,7 +347,6 @@ export default function HomePage() {
       }
     }
 
-    // Phase 4: Name Input
     if (phase === 4) {
       try {
         setText('What is your name?')
@@ -368,49 +357,41 @@ export default function HomePage() {
       }
     }
 
-    // Phase 5: Role Selection
     if (phase === 5 && !hasShownMessage) {
       setHasShownMessage(true)
       const message = `Welcome, ${userName}. Which path calls to you?`
       typewriterEffect(message)
     }
 
-    // Phase 6: Motivations
     if (phase === 6) {
       const message = `The ${selectedRole}, master of ${selectedElement}. What drives you?`
       typewriterEffect(message)
     }
 
-    // Phase 7: Flaws
     if (phase === 7) {
       const message = "What flaws shape your journey?"
       typewriterEffect(message)
     }
 
-    // Phase 8: Talents
     if (phase === 8) {
       const message = "What talents do you bring to the Garden?"
       typewriterEffect(message)
     }
 
-    // Phase 9: Appearance
     if (phase === 9 && !hasShownMessage) {
       setHasShownMessage(true)
       const message = "Describe your physical appearance."
       typewriterEffect(message)
     }
 
-    // Phase 10: Show final profile and transition to image generation
     if (phase === 10) {
       setText(`Your story is ready, ${userName}. Now, let us create your portrait.`)
-      // Automatically move to image prompt phase after a moment
       setTimeout(() => {
         setPhase(11)
-        setIsGeneratingPrompt(true) // Start prompt generation immediately
+        setIsGeneratingPrompt(true)
       }, 3000)
     }
 
-    // Phase 11: Image Prompt Generation and Review
     if (phase === 11 && !hasShownMessage) {
       const analyzeAndGeneratePrompt = async () => {
         setIsAnalyzing(true)
@@ -438,14 +419,23 @@ export default function HomePage() {
       const steps = isGeneratingPrompt ? promptGenerationSteps : imageGenerationSteps
       const interval = setInterval(() => {
         setCurrentLoadingStep(prev => (prev + 1) % steps.length)
-      }, 2000) // Change message every 2 seconds
+      }, 2000)
 
       return () => {
         clearInterval(interval)
-        setCurrentLoadingStep(0) // Reset step when loading finishes
+        setCurrentLoadingStep(0)
       }
     }
   }, [isGeneratingPrompt, isGeneratingImage])
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -458,7 +448,6 @@ export default function HomePage() {
         setCharacterProfile(prev => ({ ...prev, name: inputValue }))
         break
       case 5:
-        // Role selection is handled by the button clicks
         return
       case 6:
         if (!inputValue.trim()) return
@@ -644,15 +633,14 @@ export default function HomePage() {
           <div className="mt-4 flex justify-center">
             <button
               onClick={() => {
-                // Reset all necessary states before showing edit interface
                 setInputValue(character.imagePrompt || '')
                 setText('Edit your portrait description')
                 setPhase(11)
                 setIsGeneratingPrompt(false)
                 setIsGeneratingImage(false)
                 setTypewriterComplete(true)
-                setHasShownMessage(true) // Prevent prompt generation
-                setCurrentLoadingStep(0) // Reset loading step
+                setHasShownMessage(true)
+                setCurrentLoadingStep(0)
               }}
               className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded border border-white/20 
               transition-colors font-mono text-sm flex items-center gap-2"
@@ -750,13 +738,11 @@ export default function HomePage() {
 
   return (
     <>
-      <CustomCursor />
+      {!isMobile && <CustomCursor />}
       <DigitalRain />
       <BackgroundMusic />
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 md:p-24">
-        {/* Main chat interface */}
         <div className="w-full max-w-2xl">
-          {/* Only show title when not in loading states and not in final profile view */}
           {!isGeneratingImage && !isGeneratingPrompt && phase !== 12 && (
             <h1 className="text-4xl font-bold font-mono text-center mb-8 tracking-wide">
               {text}
