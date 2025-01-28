@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
+const apiKey = process.env.OPENAI_API_KEY
+const orgId = process.env.OPENAI_ORG_ID
+
 export async function POST(request: Request) {
   console.log('Starting image generation...')
-  console.log('API Key available:', !!process.env.OPENAI_API_KEY)
-  console.log('Organization ID available:', !!process.env.OPENAI_ORG_ID)
+  console.log('API Key length:', apiKey?.length)
+  console.log('Organization ID length:', orgId?.length)
   
-  if (!process.env.OPENAI_API_KEY) {
+  if (!apiKey) {
     console.error('OpenAI API key missing')
     return NextResponse.json(
       { error: 'OpenAI API key not configured' },
@@ -27,13 +30,19 @@ export async function POST(request: Request) {
 
     console.log('Initializing OpenAI client...')
 
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      organization: process.env.OPENAI_ORG_ID
-    })
+    const configuration = {
+      apiKey: apiKey,
+      organization: orgId,
+      dangerouslyAllowBrowser: true
+    }
+
+    const openai = new OpenAI(configuration)
 
     try {
-      console.log('Calling OpenAI API...')
+      console.log('Calling OpenAI API with configuration:', {
+        hasApiKey: !!configuration.apiKey,
+        hasOrgId: !!configuration.organization
+      })
       const response = await openai.images.generate({
         model: "dall-e-3",
         prompt: prompt,
