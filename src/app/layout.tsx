@@ -24,10 +24,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        <meta 
+          name="viewport" 
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" 
+        />
       </head>
-      <body className={`${inter.className} bg-black text-white`}>
-        {children}
+      <body className={`${inter.className} bg-black text-white min-h-screen min-h-[-webkit-fill-available]`}>
+        <div className="fixed inset-0 overflow-y-auto">
+          {children}
+        </div>
       </body>
     </html>
   );

@@ -791,8 +791,8 @@ export default function HomePage() {
       {!isMobile && <CustomCursor />}
       <DigitalRain />
       <BackgroundMusic />
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-6 md:p-24 overflow-x-hidden">
-        <div className="w-full max-w-[95vw] md:max-w-2xl">
+      <div className="relative z-10 flex min-h-screen min-h-[-webkit-fill-available] flex-col items-center justify-start md:justify-center px-4 py-6 md:p-24 overflow-x-hidden">
+        <div className="w-full max-w-[95vw] md:max-w-2xl mt-4 md:mt-0">
           {!uiState.isGeneratingImage && !uiState.isGeneratingPrompt && phase !== 12 && (
             <h1 className="text-4xl font-bold font-mono text-center mb-8 tracking-wide">
               {text}

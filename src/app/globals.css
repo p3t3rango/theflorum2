@@ -218,3 +218,43 @@ body {
   overflow-x: hidden;
 }
 
+/* Mobile viewport fixes */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Prevent content jump on mobile */
+@media (max-width: 767px) {
+  html {
+    height: -webkit-fill-available;
+  }
+  
+  body {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    position: fixed;
+    width: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Adjust input padding when keyboard is visible */
+  input:focus,
+  textarea:focus {
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+  
+  /* Prevent zoom on inputs */
+  input, 
+  textarea {
+    font-size: 16px !important;
+  }
+  
+  /* Adjust container spacing */
+  .flex-col {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+}
+
