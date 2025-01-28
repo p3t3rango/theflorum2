@@ -12,7 +12,8 @@ const pressStart2P = Press_Start_2P({
 
 export const metadata: Metadata = {
   title: "Florum Protocol",
-  description: "Welcome to the Eternal Garden",
+  description: "A mystical character creation experience",
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0'
 };
 
 export default function RootLayout({

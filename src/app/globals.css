@@ -186,3 +186,35 @@ body {
   }
 }
 
+/* Add mobile viewport control */
+@media (max-width: 767px) {
+  html, body {
+    overflow-x: hidden;
+    position: relative;
+    width: 100%;
+  }
+  
+  /* Adjust text sizes for mobile */
+  h1 {
+    font-size: 1.75rem !important;
+    line-height: 2rem !important;
+  }
+  
+  h2 {
+    font-size: 1.5rem !important;
+    line-height: 1.75rem !important;
+  }
+  
+  /* Add more padding for touch targets */
+  button, 
+  input, 
+  textarea {
+    padding: 0.75rem !important;
+  }
+}
+
+/* Prevent horizontal scroll on all devices */
+.overflow-x-hidden {
+  overflow-x: hidden;
+}
+

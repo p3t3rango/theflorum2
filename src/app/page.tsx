@@ -535,7 +535,7 @@ export default function HomePage() {
     return (
       <div className="w-full">
         {phase === 5 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 w-full">
             {roles.map((role) => (
               <button
                 key={role.name}
@@ -667,7 +667,7 @@ export default function HomePage() {
 
   // Memoize the renderProfile component
   const renderProfile = useMemo(() => (
-    <div className="mt-8 p-8 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm">
+    <div className="mt-8 p-4 md:p-8 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm w-full">
       <div className="text-center mb-12">
         <h2 className="text-3xl font-mono font-bold mb-2">✧ Character Portrait ✧</h2>
         <div className="h-0.5 w-32 bg-white/20 mx-auto"></div>
@@ -702,7 +702,7 @@ export default function HomePage() {
         </div>
       )}
 
-      <div className="space-y-6 max-w-2xl mx-auto">
+      <div className="space-y-6 w-full md:max-w-2xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <h3 className="text-lg font-mono text-white/80">✧ Name</h3>
@@ -791,8 +791,8 @@ export default function HomePage() {
       {!isMobile && <CustomCursor />}
       <DigitalRain />
       <BackgroundMusic />
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 md:p-24">
-        <div className="w-full max-w-2xl">
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-6 md:p-24 overflow-x-hidden">
+        <div className="w-full max-w-[95vw] md:max-w-2xl">
           {!uiState.isGeneratingImage && !uiState.isGeneratingPrompt && phase !== 12 && (
             <h1 className="text-4xl font-bold font-mono text-center mb-8 tracking-wide">
               {text}
