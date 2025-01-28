@@ -133,16 +133,17 @@ export default function HomePage() {
   }
 
   const generateImagePrompt = async (char: Character) => {
-    try {
-      const roleStyles = {
-        'Kindred': 'ethereal aura, spiritual energy wisps, emotional resonance visualized as flowing light',
-        'Lithian': 'crystalline formations, geometric patterns, ancient runes and glowing sigils',
-        'Solaris': 'radiant light, celestial symbols, solar coronas and starlight',
-        'Chromatic': 'prismatic effects, color-shifting elements, transformative energy',
-        'Verdant': 'natural growth, organic patterns, living energy tendrils',
-        'Aquatic': 'flowing water effects, liquid light, adaptive patterns'
-      }
+    // Move roleStyles outside try block so it's accessible in catch block
+    const roleStyles = {
+      'Kindred': 'ethereal aura, spiritual energy wisps, emotional resonance visualized as flowing light',
+      'Lithian': 'crystalline formations, geometric patterns, ancient runes and glowing sigils',
+      'Solaris': 'radiant light, celestial symbols, solar coronas and starlight',
+      'Chromatic': 'prismatic effects, color-shifting elements, transformative energy',
+      'Verdant': 'natural growth, organic patterns, living energy tendrils',
+      'Aquatic': 'flowing water effects, liquid light, adaptive patterns'
+    }
 
+    try {
       const roleStyle = char.role ? roleStyles[char.role as keyof typeof roleStyles] : ''
       
       const response = await fetch('/api/generate-prompt', {
@@ -161,7 +162,7 @@ export default function HomePage() {
       return data.prompt
     } catch (error) {
       console.error('Error:', error)
-      // Enhanced fallback prompt with role-specific styling
+      // Now roleStyles is accessible here
       return `A mystical ethereal portrait of ${char.name}, a ${char.role} in the Eternal Garden. 
       ${char.role ? `Incorporating ${roleStyles[char.role as keyof typeof roleStyles]}.` : ''}
       Physical traits: ${char.appearance?.features || ''}
