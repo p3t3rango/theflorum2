@@ -4,33 +4,36 @@ import { useEffect, useState } from 'react'
 
 export function CustomCursor() {
   const [position, setPosition] = useState({ x: 0, y: 0 })
-  const [isMobile, setIsMobile] = useState(true) // Default to true to prevent flicker
+  const [isMobile, setIsMobile] = useState(true)
+  const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
-    // Check if device is mobile
+    // Wait for window to be defined
+    if (typeof window === 'undefined') return
+
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
     }
     
-    checkMobile() // Initial check
+    checkMobile()
+    setIsReady(true)
+    
     window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
-    // Only add mouse tracking if not mobile
-    if (!isMobile) {
-      const updatePosition = (e: MouseEvent) => {
-        setPosition({ x: e.clientX, y: e.clientY })
-      }
-      window.addEventListener('mousemove', updatePosition)
-      return () => {
-        window.removeEventListener('mousemove', updatePosition)
-        window.removeEventListener('resize', checkMobile)
-      }
+  useEffect(() => {
+    if (!isReady || isMobile || typeof window === 'undefined') return
+
+    const updatePosition = (e: MouseEvent) => {
+      setPosition({ x: e.clientX, y: e.clientY })
     }
 
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [isMobile])
+    window.addEventListener('mousemove', updatePosition)
+    return () => window.removeEventListener('mousemove', updatePosition)
+  }, [isReady, isMobile])
 
-  if (isMobile) return null
+  if (!isReady || isMobile) return null
 
   return (
     <div 
