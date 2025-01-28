@@ -134,12 +134,23 @@ export default function HomePage() {
 
   const generateImagePrompt = async (char: Character) => {
     try {
+      const roleStyles = {
+        'Kindred': 'ethereal aura, spiritual energy wisps, emotional resonance visualized as flowing light',
+        'Lithian': 'crystalline formations, geometric patterns, ancient runes and glowing sigils',
+        'Solaris': 'radiant light, celestial symbols, solar coronas and starlight',
+        'Chromatic': 'prismatic effects, color-shifting elements, transformative energy',
+        'Verdant': 'natural growth, organic patterns, living energy tendrils',
+        'Aquatic': 'flowing water effects, liquid light, adaptive patterns'
+      }
+
+      const roleStyle = char.role ? roleStyles[char.role as keyof typeof roleStyles] : ''
+      
       const response = await fetch('/api/generate-prompt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ character: char })
+        body: JSON.stringify({ character: char, roleStyle })
       })
 
       if (!response.ok) {
@@ -150,14 +161,16 @@ export default function HomePage() {
       return data.prompt
     } catch (error) {
       console.error('Error:', error)
-      // Fallback prompt if API fails
+      // Enhanced fallback prompt with role-specific styling
       return `A mystical ethereal portrait of ${char.name}, a ${char.role} in the Eternal Garden. 
+      ${char.role ? `Incorporating ${roleStyles[char.role as keyof typeof roleStyles]}.` : ''}
       Physical traits: ${char.appearance?.features || ''}
       Height: ${char.appearance?.height || ''}
       Age: ${char.appearance?.age || ''}
       They emanate an aura of ${char.talents}, while carrying the weight of ${char.flaws}.
       Their spirit is driven by ${char.motivations}.
-      Style: Ethereal digital art with magical elements, cinematic lighting, detailed character design.`
+      Style: High-quality digital art, ethereal lighting, intricate details, mystical atmosphere.
+      Additional elements: Magical energy effects, otherworldly background, dynamic composition.`
     }
   }
 
