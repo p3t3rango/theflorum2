@@ -25,31 +25,41 @@ export async function POST(request: Request) {
       organization: process.env.OPENAI_ORG_ID
     })
 
-    const response = await openai.images.generate({
-      model: "dall-e-3",
-      prompt: prompt,
-      n: 1,
-      size: "1024x1024",
-      quality: "standard",
-      style: "vivid"
-    })
+    try {
+      const response = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "standard",
+        style: "vivid"
+      })
 
-    console.log('DALL-E response:', response)
+      console.log('DALL-E response:', response)
 
-    if (!response.data?.[0]?.url) {
-      throw new Error('No image URL in response')
+      if (!response.data?.[0]?.url) {
+        throw new Error('No image URL in response')
+      }
+
+      return NextResponse.json({ imageUrl: response.data[0].url })
+    } catch (openaiError) {
+      console.error('OpenAI API error:', openaiError)
+      return NextResponse.json(
+        { 
+          error: openaiError instanceof Error ? openaiError.message : 'OpenAI API error',
+          details: JSON.stringify(openaiError)
+        },
+        { status: 500 }
+      )
     }
-
-    return NextResponse.json({ imageUrl: response.data[0].url })
   } catch (error) {
-    console.error('Error in generate-image:', error)
-    
+    console.error('Request error:', error)
     return NextResponse.json(
       { 
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        details: error
+        error: error instanceof Error ? error.message : 'Failed to process request',
+        details: JSON.stringify(error)
       },
-      { status: 500 }
+      { status: 400 }
     )
   }
 } 
