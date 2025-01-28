@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { RefreshCw, Check } from 'lucide-react'
 import { BackgroundMusic } from '@/components/BackgroundMusic'
 import { DigitalRain } from '@/components/DigitalRain'
@@ -90,36 +90,83 @@ const imageGenerationSteps = [
   "Crystallizing the vision..."
 ]
 
+// Move these outside the component to prevent recreation
+const roleStyles = {
+  'Kindred': {
+    style: 'ethereal aura, spiritual energy wisps, emotional resonance visualized as flowing light',
+    elements: 'surrounded by swirling spirit energies, emotional auras, ethereal mist',
+    colors: 'soft purples and silvers, ethereal whites',
+    atmosphere: 'mystical and empathic'
+  },
+  'Lithian': {
+    style: 'crystalline formations, geometric patterns, ancient runes and glowing sigils',
+    elements: 'floating crystal shards, ancient geometric symbols, crystalline structures',
+    colors: 'deep blues and prismatic crystal reflections',
+    atmosphere: 'ancient and mysterious'
+  },
+  'Solaris': {
+    style: 'radiant light, celestial symbols, solar coronas and starlight',
+    elements: 'solar flares, star patterns, celestial symbols',
+    colors: 'golden light, warm solar hues, starlight accents',
+    atmosphere: 'radiant and powerful'
+  },
+  'Chromatic': {
+    style: 'prismatic effects, color-shifting elements, transformative energy',
+    elements: 'shifting color patterns, rainbow energy flows, prismatic auras',
+    colors: 'vibrant spectrum of shifting colors',
+    atmosphere: 'dynamic and transformative'
+  },
+  'Verdant': {
+    style: 'natural growth, organic patterns, living energy tendrils',
+    elements: 'living vines, blooming energy flowers, nature spirits',
+    colors: 'vibrant greens and earthy tones, bioluminescent accents',
+    atmosphere: 'natural and life-giving'
+  },
+  'Aquatic': {
+    style: 'flowing water effects, liquid light, adaptive patterns',
+    elements: 'water currents, floating droplets, fluid energy patterns',
+    colors: 'deep blues and aqua tones, liquid light effects',
+    atmosphere: 'fluid and adaptable'
+  }
+} as const
+
 export default function HomePage() {
+  const [uiState, setUiState] = useState({
+    isGeneratingPrompt: false,
+    isGeneratingImage: false,
+    isDissolving: false,
+    isGlitching: false,
+    typewriterComplete: false,
+    hasShownMessage: false
+  })
+
+  const [characterState, setCharacterState] = useState({
+    name: '',
+    role: '',
+    selectedRole: '',
+    selectedElement: '',
+    currentLoadingStep: 0
+  })
+
   const [text, setText] = useState('')
   const [phase, setPhase] = useState(0)
   const [spiritText, setSpiritText] = useState('')
-  const [isGlitching, setIsGlitching] = useState(false)
   const [character, setCharacter] = useState<Character>({ 
     name: '', 
     appearance: { age: '', height: '', features: '' }
   })
-  const [typewriterComplete, setTypewriterComplete] = useState(false)
   const [generatedPrompt, setGeneratedPrompt] = useState('')
   const [isEditingPrompt, setIsEditingPrompt] = useState(false)
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
-  const [hasShownMessage, setHasShownMessage] = useState(false)
-  const [userName, setUserName] = useState('')
-  const [selectedRole, setSelectedRole] = useState('')
-  const [selectedElement, setSelectedElement] = useState('')
   const [characterProfile, setCharacterProfile] = useState<Character>({ name: '' })
-  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [userName, setUserName] = useState('')
   const [inputValue, setInputValue] = useState('')
-  const [currentLoadingStep, setCurrentLoadingStep] = useState(0)
-  const [isDissolving, setIsDissolving] = useState(false)
   const [isMobile, setIsMobile] = useState(true)
   
   const typewriterEffect = (fullText: string, onComplete?: () => void) => {
     try {
       let currentIndex = 0
       setText('')
-      setTypewriterComplete(false)
+      setUiState(prev => ({ ...prev, typewriterComplete: false }))
       
       const intervalId = setInterval(() => {
         if (currentIndex <= fullText.length) {
@@ -127,61 +174,22 @@ export default function HomePage() {
           currentIndex++
         } else {
           clearInterval(intervalId)
-          setTypewriterComplete(true)
+          setUiState(prev => ({ ...prev, typewriterComplete: true }))
           onComplete?.()
         }
       }, 25)
       return () => {
         clearInterval(intervalId)
-        setTypewriterComplete(true)
+        setUiState(prev => ({ ...prev, typewriterComplete: true }))
       }
     } catch (error) {
       console.error('Typewriter effect error:', error)
       setText(fullText)
-      setTypewriterComplete(true)
+      setUiState(prev => ({ ...prev, typewriterComplete: true }))
     }
   }
 
   const generateImagePrompt = async (char: Character) => {
-    const roleStyles = {
-      'Kindred': {
-        style: 'ethereal aura, spiritual energy wisps, emotional resonance visualized as flowing light',
-        elements: 'surrounded by swirling spirit energies, emotional auras, ethereal mist',
-        colors: 'soft purples and silvers, ethereal whites',
-        atmosphere: 'mystical and empathic'
-      },
-      'Lithian': {
-        style: 'crystalline formations, geometric patterns, ancient runes and glowing sigils',
-        elements: 'floating crystal shards, ancient geometric symbols, crystalline structures',
-        colors: 'deep blues and prismatic crystal reflections',
-        atmosphere: 'ancient and mysterious'
-      },
-      'Solaris': {
-        style: 'radiant light, celestial symbols, solar coronas and starlight',
-        elements: 'solar flares, star patterns, celestial symbols',
-        colors: 'golden light, warm solar hues, starlight accents',
-        atmosphere: 'radiant and powerful'
-      },
-      'Chromatic': {
-        style: 'prismatic effects, color-shifting elements, transformative energy',
-        elements: 'shifting color patterns, rainbow energy flows, prismatic auras',
-        colors: 'vibrant spectrum of shifting colors',
-        atmosphere: 'dynamic and transformative'
-      },
-      'Verdant': {
-        style: 'natural growth, organic patterns, living energy tendrils',
-        elements: 'living vines, blooming energy flowers, nature spirits',
-        colors: 'vibrant greens and earthy tones, bioluminescent accents',
-        atmosphere: 'natural and life-giving'
-      },
-      'Aquatic': {
-        style: 'flowing water effects, liquid light, adaptive patterns',
-        elements: 'water currents, floating droplets, fluid energy patterns',
-        colors: 'deep blues and aqua tones, liquid light effects',
-        atmosphere: 'fluid and adaptable'
-      }
-    }
-
     try {
       const roleStyle = char.role ? roleStyles[char.role as keyof typeof roleStyles] : null
       
@@ -223,17 +231,18 @@ export default function HomePage() {
     }
   }
 
-  const handleGenerateImage = async (prompt: string) => {
-    setIsDissolving(true)
+  // Memoize handlers that don't need to change
+  const handleGenerateImage = useCallback(async (prompt: string) => {
+    setUiState(prev => ({ ...prev, isDissolving: true }))
     
     try {
       await new Promise(resolve => setTimeout(resolve, 800))
       
       setText('')
       setInputValue('')
-      setIsGeneratingImage(true)
-      setTypewriterComplete(true)
-      setHasShownMessage(true)
+      setUiState(prev => ({ ...prev, isGeneratingImage: true }))
+      setUiState(prev => ({ ...prev, typewriterComplete: true }))
+      setUiState(prev => ({ ...prev, hasShownMessage: true }))
       
       const response = await fetch('/api/generate-image', {
         method: 'POST',
@@ -271,11 +280,11 @@ export default function HomePage() {
       console.error('Error details:', error)
       alert(error instanceof Error ? error.message : 'An error occurred while generating the image. Please try again.')
     } finally {
-      setIsDissolving(false)
-      setIsGeneratingImage(false)
-      setCurrentLoadingStep(0)
+      setUiState(prev => ({ ...prev, isDissolving: false }))
+      setUiState(prev => ({ ...prev, isGeneratingImage: false }))
+      setCharacterState(prev => ({ ...prev, currentLoadingStep: 0 }))
     }
-  }
+  }, []) // Empty deps since it only uses setState functions
 
   useEffect(() => {
     if (phase === 0) {
@@ -301,10 +310,10 @@ export default function HomePage() {
       const completedTimeout = setTimeout(() => {
         clearInterval(spiritInterval)
         setText('Loading complete')
-        setIsGlitching(true)
+        setUiState(prev => ({ ...prev, isGlitching: true }))
         
         setTimeout(() => {
-          setIsGlitching(false)
+          setUiState(prev => ({ ...prev, isGlitching: false }))
           setPhase(2)
         }, 1500)
         
@@ -358,7 +367,7 @@ export default function HomePage() {
             clearInterval(matrixInterval)
             
             setTimeout(() => {
-              setIsGlitching(true)
+              setUiState(prev => ({ ...prev, isGlitching: true }))
               setTimeout(() => {
                 setPhase(3)
               }, 600)
@@ -371,7 +380,7 @@ export default function HomePage() {
     }
 
     if (phase === 3) {
-      setIsGlitching(false)
+      setUiState(prev => ({ ...prev, isGlitching: false }))
       const spiritInterval = setInterval(() => {
         setSpiritText(secondSpiritTexts[Math.floor(Math.random() * secondSpiritTexts.length)])
       }, 200)
@@ -390,21 +399,21 @@ export default function HomePage() {
     if (phase === 4) {
       try {
         setText('What is your name?')
-        setTypewriterComplete(true)
+        setUiState(prev => ({ ...prev, typewriterComplete: true }))
       } catch (error) {
         console.error('Error in name phase:', error)
         setText('Please enter your name')
       }
     }
 
-    if (phase === 5 && !hasShownMessage) {
-      setHasShownMessage(true)
+    if (phase === 5 && !uiState.hasShownMessage) {
+      setUiState(prev => ({ ...prev, hasShownMessage: true }))
       const message = `Welcome, ${userName}. Which path calls to you?`
       typewriterEffect(message)
     }
 
     if (phase === 6) {
-      const message = `The ${selectedRole}, master of ${selectedElement}. What drives you?`
+      const message = `The ${characterState.selectedRole}, master of ${characterState.selectedElement}. What drives you?`
       typewriterEffect(message)
     }
 
@@ -418,8 +427,8 @@ export default function HomePage() {
       typewriterEffect(message)
     }
 
-    if (phase === 9 && !hasShownMessage) {
-      setHasShownMessage(true)
+    if (phase === 9 && !uiState.hasShownMessage) {
+      setUiState(prev => ({ ...prev, hasShownMessage: true }))
       const message = "Describe your physical appearance."
       typewriterEffect(message)
     }
@@ -428,14 +437,13 @@ export default function HomePage() {
       setText(`Your story is ready, ${userName}. Now, let us create your portrait.`)
       setTimeout(() => {
         setPhase(11)
-        setIsGeneratingPrompt(true)
+        setUiState(prev => ({ ...prev, isGeneratingPrompt: true }))
       }, 3000)
     }
 
-    if (phase === 11 && !hasShownMessage) {
+    if (phase === 11 && !uiState.hasShownMessage) {
       const analyzeAndGeneratePrompt = async () => {
-        setIsAnalyzing(true)
-        setIsGeneratingPrompt(true)
+        setUiState(prev => ({ ...prev, isGeneratingPrompt: true }))
         try {
           const prompt = await generateImagePrompt(characterProfile)
           setGeneratedPrompt(prompt)
@@ -445,28 +453,30 @@ export default function HomePage() {
           console.error('Error analyzing character:', error)
           setText("The connection to the Eternal Garden is unclear. Please try again.")
         } finally {
-          setIsAnalyzing(false)
-          setIsGeneratingPrompt(false)
-          setTypewriterComplete(true)
+          setUiState(prev => ({ 
+            ...prev, 
+            isGeneratingPrompt: false,
+            typewriterComplete: true 
+          }))
         }
       }
       analyzeAndGeneratePrompt()
     }
-  }, [phase, character.name, character.role, hasShownMessage, userName, selectedRole, selectedElement])
+  }, [phase, character.name, character.role, uiState.hasShownMessage, userName, characterState.selectedRole, characterState.selectedElement])
 
   useEffect(() => {
-    if (isGeneratingPrompt || isGeneratingImage) {
-      const steps = isGeneratingPrompt ? promptGenerationSteps : imageGenerationSteps
+    if (uiState.isGeneratingPrompt || uiState.isGeneratingImage) {
+      const steps = uiState.isGeneratingPrompt ? promptGenerationSteps : imageGenerationSteps
       const interval = setInterval(() => {
-        setCurrentLoadingStep(prev => (prev + 1) % steps.length)
+        setCharacterState(prev => ({ ...prev, currentLoadingStep: (prev.currentLoadingStep + 1) % steps.length }))
       }, 2000)
 
       return () => {
         clearInterval(interval)
-        setCurrentLoadingStep(0)
+        setCharacterState(prev => ({ ...prev, currentLoadingStep: 0 }))
       }
     }
-  }, [isGeneratingPrompt, isGeneratingImage])
+  }, [uiState.isGeneratingPrompt, uiState.isGeneratingImage])
 
   useEffect(() => {
     const checkMobile = () => {
@@ -479,7 +489,7 @@ export default function HomePage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!typewriterComplete && phase > 4) return
+    if (!uiState.typewriterComplete && phase > 4) return
 
     switch (phase) {
       case 4:
@@ -517,8 +527,8 @@ export default function HomePage() {
 
     setInputValue('')
     setPhase(prev => prev + 1)
-    setTypewriterComplete(false)
-    setHasShownMessage(false)
+    setUiState(prev => ({ ...prev, typewriterComplete: false }))
+    setUiState(prev => ({ ...prev, hasShownMessage: false }))
   }
 
   const renderInput = () => {
@@ -530,8 +540,7 @@ export default function HomePage() {
               <button
                 key={role.name}
                 onClick={() => {
-                  setSelectedRole(role.name)
-                  setSelectedElement(role.element)
+                  setCharacterState(prev => ({ ...prev, selectedRole: role.name, selectedElement: role.element }))
                   setCharacterProfile(prev => ({ ...prev, role: role.name }))
                   setPhase(6)
                 }}
@@ -600,18 +609,18 @@ export default function HomePage() {
         
         {phase === 11 && (
           <div className="space-y-4">
-            {isGeneratingPrompt || isGeneratingImage ? (
+            {uiState.isGeneratingPrompt || uiState.isGeneratingImage ? (
               <div className="text-center space-y-6 p-8">
                 <div className="animate-pulse text-purple-400 text-2xl">✧</div>
                 <div className="space-y-2">
                   <p className="text-white/80 font-mono">
-                    {isGeneratingPrompt ? 'Consulting the Oracle' : 'Manifesting Your Portrait'}
+                    {uiState.isGeneratingPrompt ? 'Consulting the Oracle' : 'Manifesting Your Portrait'}
                   </p>
                   <div className="flex flex-col gap-3 text-sm text-white/60 italic">
                     <p className="min-h-[20px] transition-opacity duration-500">
-                      {isGeneratingPrompt 
-                        ? promptGenerationSteps[currentLoadingStep]
-                        : imageGenerationSteps[currentLoadingStep]
+                      {uiState.isGeneratingPrompt 
+                        ? promptGenerationSteps[characterState.currentLoadingStep]
+                        : imageGenerationSteps[characterState.currentLoadingStep]
                       }
                     </p>
                   </div>
@@ -626,15 +635,15 @@ export default function HomePage() {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   className={`w-full p-4 bg-white/5 rounded border border-white/10 focus:border-white/20 
-                  focus:outline-none font-mono min-h-[200px] ${isDissolving ? 'dissolve-out' : ''}`}
+                  focus:outline-none font-mono min-h-[200px] ${uiState.isDissolving ? 'dissolve-out' : ''}`}
                   placeholder="Loading prompt..."
-                  disabled={isGeneratingPrompt || isDissolving}
+                  disabled={uiState.isGeneratingPrompt || uiState.isDissolving}
                 />
                 <button
                   onClick={() => handleGenerateImage(inputValue)}
                   className={`w-full p-4 bg-purple-500/20 hover:bg-purple-500/30 rounded border border-purple-500/30 
-                  transition-colors font-mono flex items-center justify-center gap-2 ${isDissolving ? 'dissolve-out' : ''}`}
-                  disabled={isGeneratingImage || isDissolving}
+                  transition-colors font-mono flex items-center justify-center gap-2 ${uiState.isDissolving ? 'dissolve-out' : ''}`}
+                  disabled={uiState.isGeneratingImage || uiState.isDissolving}
                 >
                   <span>Generate Portrait</span>
                 </button>
@@ -656,7 +665,8 @@ export default function HomePage() {
     )
   }
 
-  const renderProfile = () => (
+  // Memoize the renderProfile component
+  const renderProfile = useMemo(() => (
     <div className="mt-8 p-8 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm">
       <div className="text-center mb-12">
         <h2 className="text-3xl font-mono font-bold mb-2">✧ Character Portrait ✧</h2>
@@ -676,11 +686,11 @@ export default function HomePage() {
                 setInputValue(character.imagePrompt || '')
                 setText('Edit your portrait description')
                 setPhase(11)
-                setIsGeneratingPrompt(false)
-                setIsGeneratingImage(false)
-                setTypewriterComplete(true)
-                setHasShownMessage(true)
-                setCurrentLoadingStep(0)
+                setUiState(prev => ({ ...prev, isGeneratingPrompt: false }))
+                setUiState(prev => ({ ...prev, isGeneratingImage: false }))
+                setUiState(prev => ({ ...prev, typewriterComplete: true }))
+                setUiState(prev => ({ ...prev, hasShownMessage: true }))
+                setCharacterState(prev => ({ ...prev, currentLoadingStep: 0 }))
               }}
               className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded border border-white/20 
               transition-colors font-mono text-sm flex items-center gap-2"
@@ -755,7 +765,7 @@ export default function HomePage() {
         </div>
       </div>
     </div>
-  )
+  ), [character.imageUrl, characterProfile, userName])
 
   const getPlaceholder = () => {
     switch (phase) {
@@ -783,17 +793,17 @@ export default function HomePage() {
       <BackgroundMusic />
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 md:p-24">
         <div className="w-full max-w-2xl">
-          {!isGeneratingImage && !isGeneratingPrompt && phase !== 12 && (
+          {!uiState.isGeneratingImage && !uiState.isGeneratingPrompt && phase !== 12 && (
             <h1 className="text-4xl font-bold font-mono text-center mb-8 tracking-wide">
               {text}
-              {!typewriterComplete && <span className="animate-blink">|</span>}
+              {!uiState.typewriterComplete && <span className="animate-blink">|</span>}
             </h1>
           )}
           
           {phase >= 4 && phase <= 11 && (
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               {renderInput()}
-              {phase !== 11 && phase !== 10 && !isGeneratingImage && !isGeneratingPrompt && (
+              {phase !== 11 && phase !== 10 && !uiState.isGeneratingImage && !uiState.isGeneratingPrompt && (
                 <button
                   type="submit"
                   className="p-2 rounded bg-white/10 hover:bg-white/20 transition-colors font-mono"

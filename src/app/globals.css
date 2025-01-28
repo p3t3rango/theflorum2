@@ -117,6 +117,7 @@ body {
   }
 }
 
+/* Remove all cursor-related styles */
 .custom-cursor {
   width: 24px;
   height: 24px;
@@ -131,12 +132,14 @@ body {
   text-shadow: 0 0 8px rgba(147, 51, 234, 0.5);
   transform: translate(-50%, -50%);
   transition: transform 0.1s ease;
-  mix-blend-mode: difference; /* Makes cursor visible on all backgrounds */
+  mix-blend-mode: difference;
 }
 
-/* Optional: Add hover effect for the cursor */
-.custom-cursor.hover {
-  transform: translate(-50%, -50%) scale(1.2);
+/* Only apply custom cursor on desktop */
+@media (min-width: 768px) {
+  .cursor-none {
+    cursor: none;
+  }
 }
 
 /* Add dissolve animation */
