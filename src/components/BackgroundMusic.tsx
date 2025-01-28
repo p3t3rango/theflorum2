@@ -17,12 +17,17 @@ export function BackgroundMusic() {
     // Update the progression to be more sci-fi/noir
     const progression = {
       chords: [
-        [60, 67, 70, 76],  // Cm9
-        [58, 65, 69, 74],  // Bbm9
-        [56, 63, 67, 72],  // Abm9
-        [61, 68, 71, 77]   // C#m9
-      ].map(chord => chord.map(midiToFreq)),
-      bass: [36, 34, 32, 37].map(midiToFreq)  // Lower octave for more depth
+        [196.00, 233.08, 293.66], // Gm (G, Bb, D)
+        [349.23, 440.00, 523.25], // Eb (Eb, G, Bb)
+        [392.00, 466.16, 587.33], // F  (F, A, C)
+        [293.66, 349.23, 440.00], // Dm (D, F, A)
+      ],
+      bass: [
+        98.00,  // G  (one octave lower)
+        155.56, // Eb (one octave lower)
+        174.61, // F  (one octave lower)
+        146.83, // D  (one octave lower)
+      ]
     }
 
     // Pentatonic scale for melody
@@ -69,7 +74,6 @@ export function BackgroundMusic() {
       filter.connect(reverb)
       filter.connect(delay)
       delay.connect(delayGain)
-      delayGain.connect(delay)
       delay.connect(ctx.destination)
       reverb.connect(ctx.destination)
 
@@ -161,9 +165,31 @@ export function BackgroundMusic() {
   return (
     <button
       onClick={() => setIsPlaying(!isPlaying)}
-      className="fixed bottom-4 right-4 p-2 rounded bg-white/10 hover:bg-white/20 transition-colors z-50"
+      className="fixed bottom-4 right-4 p-2 md:p-3 rounded-lg bg-black/20 backdrop-blur border border-white/10 
+      hover:bg-white/10 transition-all duration-300 z-50 group scale-75 md:scale-100"
     >
-      {isPlaying ? '🔇 Mute' : '🔊 Ambient'}
+      {isPlaying ? (
+        <div className="relative">
+          {/* Playing state - animated waves */}
+          <div className="flex items-center gap-0.5">
+            <div className="w-0.5 h-3 bg-white/80 animate-[soundwave_0.5s_ease-in-out_infinite]" />
+            <div className="w-0.5 h-4 bg-white/80 animate-[soundwave_0.5s_ease-in-out_infinite_0.1s]" />
+            <div className="w-0.5 h-2 bg-white/80 animate-[soundwave_0.5s_ease-in-out_infinite_0.2s]" />
+            <div className="w-0.5 h-3 bg-white/80 animate-[soundwave_0.5s_ease-in-out_infinite_0.3s]" />
+          </div>
+        </div>
+      ) : (
+        <div className="relative">
+          {/* Muted state - crossed speaker */}
+          <div className="flex items-center gap-0.5">
+            <div className="w-0.5 h-3 bg-white/40" />
+            <div className="w-0.5 h-4 bg-white/40" />
+            <div className="w-0.5 h-2 bg-white/40" />
+            <div className="w-0.5 h-3 bg-white/40" />
+          </div>
+          <div className="absolute top-1/2 left-1/2 w-6 h-0.5 bg-white/60 -translate-x-1/2 -translate-y-1/2 rotate-45" />
+        </div>
+      )}
     </button>
   )
 } 

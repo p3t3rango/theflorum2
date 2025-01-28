@@ -2,12 +2,6 @@ import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
 export async function POST(request: Request) {
-  console.log('Environment variables:', {
-    hasKey: !!process.env.OPENAI_API_KEY,
-    keyPrefix: process.env.OPENAI_API_KEY?.substring(0, 10),
-    nodeEnv: process.env.NODE_ENV
-  })
-  
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
       { error: 'OpenAI API key not configured' },
@@ -15,52 +9,76 @@ export async function POST(request: Request) {
     )
   }
 
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    organization: process.env.OPENAI_ORG_ID
-  })
-
   try {
     const { character } = await request.json()
     
-    const prompt = `Analyze this character profile and create a detailed DALL-E 3 portrait prompt:
+    const prompt = `Create a detailed DALL-E 3 portrait prompt for this character:
 
-Name: ${character.name}
-Role: ${character.role}
-Key Features: ${character.appearance?.features}
-Age: ${character.appearance?.age}
-Height: ${character.appearance?.height}
-Talents: ${character.talents}
-Flaws: ${character.flaws}
-Motivations: ${character.motivations}
+Character Profile:
+- Name: ${character.name}
+- Role: ${character.role}
+- Physical Features: ${character.appearance?.features || 'Not specified'}
+- Age: ${character.appearance?.age || 'Not specified'}
+- Height: ${character.appearance?.height || 'Not specified'}
+- Talents: ${character.talents || 'Not specified'}
+- Flaws: ${character.flaws || 'Not specified'}
+- Motivations: ${character.motivations || 'Not specified'}
 
-Consider their role as ${character.role} and how their talents (${character.talents}) and flaws (${character.flaws}) might manifest in their appearance.
-Create a single, focused portrait description that captures their essence in the mystical Eternal Garden setting.
-Focus on the most striking visual elements, atmosphere, and how their inner nature manifests in their appearance.
-Format as a clear, direct DALL-E prompt that will create a high-quality character portrait.`
+Instructions:
+1. Create a SINGLE, concise paragraph (max 100 words)
+2. Focus on visual elements only
+3. Include key physical features and magical attributes
+4. Describe lighting and atmosphere briefly
+5. Use DALL-E 3 compatible language
+6. Avoid elaborate storytelling or background lore
+7. End with ", Unreal Engine 8k render"
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4-1106-preview",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert at creating detailed, atmospheric image prompts for DALL-E 3. You specialize in fantasy character portraits that blend realism with ethereal elements."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 500
+Format as: "A [style] portrait of [character description], [key visual elements], [atmosphere/lighting], Unreal Engine 8k render"`
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      organization: process.env.OPENAI_ORG_ID
     })
 
-    return NextResponse.json({ prompt: completion.choices[0].message.content })
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4-1106-preview",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert at creating concise, effective DALL-E 3 prompts. Keep responses focused, visual, and under 100 words. Do not include storytelling or non-visual elements."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      })
+
+      const generatedPrompt = completion.choices[0].message.content
+      console.log('Generated prompt:', generatedPrompt)
+
+      return NextResponse.json({ prompt: generatedPrompt })
+    } catch (openaiError) {
+      console.error('OpenAI API error:', openaiError)
+      return NextResponse.json(
+        { 
+          error: openaiError instanceof Error ? openaiError.message : 'OpenAI API error',
+          details: JSON.stringify(openaiError)
+        },
+        { status: 500 }
+      )
+    }
   } catch (error) {
-    console.error('Error generating prompt:', error)
+    console.error('Request error:', error)
     return NextResponse.json(
-      { error: 'Failed to generate prompt' },
-      { status: 500 }
+      { 
+        error: error instanceof Error ? error.message : 'Failed to process request',
+        details: JSON.stringify(error)
+      },
+      { status: 400 }
     )
   }
 } 

@@ -41,16 +41,27 @@ export async function POST(request: Request) {
         throw new Error('No image URL in response')
       }
 
-      return NextResponse.json({ imageUrl: response.data[0].url })
-    } catch (openaiError) {
+      return NextResponse.json({ 
+        success: true,
+        imageUrl: response.data[0].url 
+      })
+    } catch (openaiError: any) {
       console.error('OpenAI API error:', openaiError)
-      return NextResponse.json(
-        { 
-          error: openaiError instanceof Error ? openaiError.message : 'OpenAI API error',
-          details: JSON.stringify(openaiError)
-        },
-        { status: 500 }
-      )
+      
+      // Handle OpenAI API errors specifically
+      if (openaiError.response) {
+        return NextResponse.json({
+          success: false,
+          error: openaiError.response.data.error.message || 'OpenAI API error',
+          details: JSON.stringify(openaiError.response.data)
+        }, { status: openaiError.response.status })
+      }
+      
+      return NextResponse.json({
+        success: false,
+        error: openaiError.message || 'OpenAI API error',
+        details: JSON.stringify(openaiError)
+      }, { status: 500 })
     }
   } catch (error) {
     console.error('Request error:', error)
