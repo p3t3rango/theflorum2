@@ -144,23 +144,56 @@ export default function HomePage() {
 
   const generateImagePrompt = async (char: Character) => {
     const roleStyles = {
-      'Kindred': 'ethereal aura, spiritual energy wisps, emotional resonance visualized as flowing light',
-      'Lithian': 'crystalline formations, geometric patterns, ancient runes and glowing sigils',
-      'Solaris': 'radiant light, celestial symbols, solar coronas and starlight',
-      'Chromatic': 'prismatic effects, color-shifting elements, transformative energy',
-      'Verdant': 'natural growth, organic patterns, living energy tendrils',
-      'Aquatic': 'flowing water effects, liquid light, adaptive patterns'
+      'Kindred': {
+        style: 'ethereal aura, spiritual energy wisps, emotional resonance visualized as flowing light',
+        elements: 'surrounded by swirling spirit energies, emotional auras, ethereal mist',
+        colors: 'soft purples and silvers, ethereal whites',
+        atmosphere: 'mystical and empathic'
+      },
+      'Lithian': {
+        style: 'crystalline formations, geometric patterns, ancient runes and glowing sigils',
+        elements: 'floating crystal shards, ancient geometric symbols, crystalline structures',
+        colors: 'deep blues and prismatic crystal reflections',
+        atmosphere: 'ancient and mysterious'
+      },
+      'Solaris': {
+        style: 'radiant light, celestial symbols, solar coronas and starlight',
+        elements: 'solar flares, star patterns, celestial symbols',
+        colors: 'golden light, warm solar hues, starlight accents',
+        atmosphere: 'radiant and powerful'
+      },
+      'Chromatic': {
+        style: 'prismatic effects, color-shifting elements, transformative energy',
+        elements: 'shifting color patterns, rainbow energy flows, prismatic auras',
+        colors: 'vibrant spectrum of shifting colors',
+        atmosphere: 'dynamic and transformative'
+      },
+      'Verdant': {
+        style: 'natural growth, organic patterns, living energy tendrils',
+        elements: 'living vines, blooming energy flowers, nature spirits',
+        colors: 'vibrant greens and earthy tones, bioluminescent accents',
+        atmosphere: 'natural and life-giving'
+      },
+      'Aquatic': {
+        style: 'flowing water effects, liquid light, adaptive patterns',
+        elements: 'water currents, floating droplets, fluid energy patterns',
+        colors: 'deep blues and aqua tones, liquid light effects',
+        atmosphere: 'fluid and adaptable'
+      }
     }
 
     try {
-      const roleStyle = char.role ? roleStyles[char.role as keyof typeof roleStyles] : ''
+      const roleStyle = char.role ? roleStyles[char.role as keyof typeof roleStyles] : null
       
       const response = await fetch('/api/generate-prompt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ character: char, roleStyle })
+        body: JSON.stringify({ 
+          character: char, 
+          roleStyle: roleStyle 
+        })
       })
 
       if (!response.ok) {
@@ -171,15 +204,22 @@ export default function HomePage() {
       return data.prompt
     } catch (error) {
       console.error('Error:', error)
+      // Enhanced fallback with detailed role styling
+      const roleStyle = char.role ? roleStyles[char.role as keyof typeof roleStyles] : null
       return `A mystical ethereal portrait of ${char.name}, a ${char.role} in the Eternal Garden. 
-      ${char.role ? `Incorporating ${roleStyles[char.role as keyof typeof roleStyles]}.` : ''}
+      ${roleStyle ? `
+      Style: ${roleStyle.style}
+      Magical Elements: ${roleStyle.elements}
+      Color Palette: ${roleStyle.colors}
+      Atmosphere: ${roleStyle.atmosphere}
+      ` : ''}
       Physical traits: ${char.appearance?.features || ''}
       Height: ${char.appearance?.height || ''}
       Age: ${char.appearance?.age || ''}
       They emanate an aura of ${char.talents}, while carrying the weight of ${char.flaws}.
       Their spirit is driven by ${char.motivations}.
-      Style: High-quality digital art, ethereal lighting, intricate details, mystical atmosphere.
-      Additional elements: Magical energy effects, otherworldly background, dynamic composition.`
+      Additional elements: Magical energy effects, otherworldly background, dynamic composition.
+      Style: High-quality digital art, ethereal lighting, intricate details, mystical atmosphere.`
     }
   }
 
