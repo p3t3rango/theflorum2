@@ -22,6 +22,7 @@ export async function POST(request: Request) {
 
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
+      organization: process.env.OPENAI_ORG_ID,
       baseURL: "https://api.openai.com/v1"
     })
 
