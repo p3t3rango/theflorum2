@@ -786,18 +786,30 @@ export default function HomePage() {
     }
   }
 
-  // Add keyboard handler
+  // Update the keyboard handler
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      // Only handle Enter if we have input and typewriter is complete
       if (e.key === 'Enter' && !e.shiftKey && uiState.typewriterComplete) {
-        // Don't trigger on shift+enter for textarea
-        e.preventDefault()
         if (phase >= 4 && phase <= 11) {
-          handleSubmit(e as unknown as React.FormEvent)
+          // For textareas, only submit on Enter without shift
+          if (e.target instanceof HTMLTextAreaElement && !e.shiftKey) {
+            e.preventDefault()
+            if (inputValue.trim()) { // Only submit if we have input
+              handleSubmit(e as unknown as React.FormEvent)
+            }
+          } 
+          // For regular inputs, submit on Enter
+          else if (e.target instanceof HTMLInputElement) {
+            e.preventDefault()
+            if (inputValue.trim()) { // Only submit if we have input
+              handleSubmit(e as unknown as React.FormEvent)
+            }
+          }
         }
       }
+      // Back functionality remains the same
       if (e.key === 'Backspace' && e.metaKey) {
-        // Allow going back unless we're in the first phase or generating
         if (phase > 4 && !uiState.isGeneratingPrompt && !uiState.isGeneratingImage) {
           setPhase(prev => prev - 1)
           setUiState(prev => ({ 
@@ -811,7 +823,7 @@ export default function HomePage() {
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [phase, uiState.typewriterComplete, uiState.isGeneratingPrompt, uiState.isGeneratingImage])
+  }, [phase, uiState.typewriterComplete, uiState.isGeneratingPrompt, uiState.isGeneratingImage, inputValue])
 
   // Update the BackButton component styling
   const BackButton = () => {
