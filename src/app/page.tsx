@@ -813,7 +813,7 @@ export default function HomePage() {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [phase, uiState.typewriterComplete, uiState.isGeneratingPrompt, uiState.isGeneratingImage])
 
-  // Add back button component
+  // Update the BackButton component styling
   const BackButton = () => {
     if (phase <= 4 || uiState.isGeneratingPrompt || uiState.isGeneratingImage) return null
 
@@ -827,8 +827,8 @@ export default function HomePage() {
             hasShownMessage: false 
           }))
         }}
-        className="absolute top-4 left-4 p-2 rounded bg-white/10 hover:bg-white/20 
-        transition-colors font-mono text-sm flex items-center gap-2"
+        className="fixed top-6 left-6 p-3 rounded bg-white/10 hover:bg-white/20 
+        transition-colors font-mono text-sm z-50"
       >
         ← Back
       </button>
@@ -857,25 +857,17 @@ export default function HomePage() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-0">
               {renderInput()}
               {phase !== 11 && phase !== 10 && !uiState.isGeneratingImage && !uiState.isGeneratingPrompt && (
-                <div className="flex flex-col gap-2">
-                  <button
-                    type="submit"
-                    className="p-2 rounded bg-white/10 hover:bg-white/20 transition-colors font-mono"
-                  >
-                    Continue
-                  </button>
-                  <div className="text-center text-xs text-white/40 font-mono">
-                    Press Enter ↵
-                  </div>
-                </div>
+                <button
+                  type="submit"
+                  className="p-2 rounded bg-white/10 hover:bg-white/20 transition-colors font-mono"
+                >
+                  Continue
+                </button>
               )}
             </form>
           )}
 
           {phase === 12 && renderProfile}
-        </div>
-        <div className="text-[10px] text-white/40 font-mono mt-1 text-center">
-          ⌘ + Backspace to go back
         </div>
       </div>
     </>
