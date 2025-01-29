@@ -786,12 +786,62 @@ export default function HomePage() {
     }
   }
 
+  // Add keyboard handler
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey && uiState.typewriterComplete) {
+        // Don't trigger on shift+enter for textarea
+        e.preventDefault()
+        if (phase >= 4 && phase <= 11) {
+          handleSubmit(e as unknown as React.FormEvent)
+        }
+      }
+      if (e.key === 'Backspace' && e.metaKey) {
+        // Allow going back unless we're in the first phase or generating
+        if (phase > 4 && !uiState.isGeneratingPrompt && !uiState.isGeneratingImage) {
+          setPhase(prev => prev - 1)
+          setUiState(prev => ({ 
+            ...prev, 
+            typewriterComplete: true,
+            hasShownMessage: false 
+          }))
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [phase, uiState.typewriterComplete, uiState.isGeneratingPrompt, uiState.isGeneratingImage])
+
+  // Add back button component
+  const BackButton = () => {
+    if (phase <= 4 || uiState.isGeneratingPrompt || uiState.isGeneratingImage) return null
+
+    return (
+      <button
+        onClick={() => {
+          setPhase(prev => prev - 1)
+          setUiState(prev => ({ 
+            ...prev, 
+            typewriterComplete: true,
+            hasShownMessage: false 
+          }))
+        }}
+        className="absolute top-4 left-4 p-2 rounded bg-white/10 hover:bg-white/20 
+        transition-colors font-mono text-sm flex items-center gap-2"
+      >
+        ← Back
+      </button>
+    )
+  }
+
   return (
     <>
       {!isMobile && <CustomCursor />}
       <DigitalRain />
       <BackgroundMusic />
       <div className="relative z-10 flex min-h-screen min-h-[-webkit-fill-available] flex-col items-center justify-center px-4 py-6 md:p-24 overflow-x-hidden">
+        <BackButton />
         <div className="w-full max-w-[95vw] md:max-w-2xl">
           {!uiState.isGeneratingImage && !uiState.isGeneratingPrompt && phase !== 12 && (
             <h1 className={`text-2xl md:text-4xl font-bold font-mono text-center mb-8 tracking-wide 
@@ -807,17 +857,25 @@ export default function HomePage() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-0">
               {renderInput()}
               {phase !== 11 && phase !== 10 && !uiState.isGeneratingImage && !uiState.isGeneratingPrompt && (
-                <button
-                  type="submit"
-                  className="p-2 rounded bg-white/10 hover:bg-white/20 transition-colors font-mono"
-                >
-                  Continue
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="submit"
+                    className="p-2 rounded bg-white/10 hover:bg-white/20 transition-colors font-mono"
+                  >
+                    Continue
+                  </button>
+                  <div className="text-center text-xs text-white/40 font-mono">
+                    Press Enter ↵
+                  </div>
+                </div>
               )}
             </form>
           )}
 
           {phase === 12 && renderProfile}
+        </div>
+        <div className="text-[10px] text-white/40 font-mono mt-1 text-center">
+          ⌘ + Backspace to go back
         </div>
       </div>
     </>
