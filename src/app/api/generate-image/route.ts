@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
-const apiKey = process.env.OPENAI_API_KEY
-const orgId = process.env.OPENAI_ORG_ID
-
 export async function POST(request: Request) {
   console.log('Starting image generation...')
+  
+  // Log API key status (safely)
+  const apiKey = process.env.OPENAI_API_KEY
   console.log('API Key length:', apiKey?.length)
-  console.log('Organization ID length:', orgId?.length)
+  console.log('API Key starts with:', apiKey?.substring(0, 4))
   
   if (!apiKey) {
     console.error('OpenAI API key missing')
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
   try {
     const { prompt } = await request.json()
-    console.log('Received prompt:', prompt)
+    console.log('Received prompt length:', prompt?.length)
     
     if (!prompt) {
       return NextResponse.json(
@@ -28,21 +28,14 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log('Initializing OpenAI client...')
-
-    const configuration = {
+    console.log('Creating OpenAI client...')
+    const openai = new OpenAI({
       apiKey: apiKey,
-      organization: orgId,
-      dangerouslyAllowBrowser: true
-    }
-
-    const openai = new OpenAI(configuration)
+      organization: process.env.OPENAI_ORG_ID
+    })
 
     try {
-      console.log('Calling OpenAI API with configuration:', {
-        hasApiKey: !!configuration.apiKey,
-        hasOrgId: !!configuration.organization
-      })
+      console.log('Calling DALL-E API...')
       const response = await openai.images.generate({
         model: "dall-e-3",
         prompt: prompt,
@@ -52,7 +45,9 @@ export async function POST(request: Request) {
         style: "vivid"
       })
 
-      console.log('OpenAI response received:', !!response.data)
+      console.log('DALL-E response received:', !!response)
+      console.log('Response data exists:', !!response.data)
+      console.log('URL exists:', !!response.data?.[0]?.url)
 
       if (!response.data?.[0]?.url) {
         throw new Error('No image URL in response')
@@ -63,25 +58,17 @@ export async function POST(request: Request) {
         imageUrl: response.data[0].url 
       })
     } catch (openaiError: any) {
-      console.error('OpenAI API error:', openaiError)
-      
-      // Handle OpenAI API errors specifically
-      if (openaiError.response) {
-        return NextResponse.json({
-          success: false,
-          error: openaiError.response.data.error.message || 'OpenAI API error',
-          details: JSON.stringify(openaiError.response.data)
-        }, { status: openaiError.response.status })
-      }
+      console.error('DALL-E API error:', openaiError)
+      console.error('Error details:', JSON.stringify(openaiError, null, 2))
       
       return NextResponse.json({
         success: false,
-        error: openaiError.message || 'OpenAI API error',
+        error: openaiError.message || 'DALL-E API error',
         details: JSON.stringify(openaiError)
       }, { status: 500 })
     }
   } catch (error) {
-    console.error('Image generation error:', error)
+    console.error('General error:', error)
     return NextResponse.json(
       { error: 'Failed to generate image. Please try again.' },
       { status: 500 }
