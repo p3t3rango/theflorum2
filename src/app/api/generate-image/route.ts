@@ -4,24 +4,10 @@ import OpenAI from 'openai'
 export async function POST(request: Request) {
   console.log('Starting image generation...')
   
-  // Verify environment
-  const apiKey = process.env.OPENAI_API_KEY
-  const orgId = process.env.OPENAI_ORG_ID
-  
-  console.log('Environment check:', {
-    hasApiKey: !!apiKey,
-    apiKeyLength: apiKey?.length,
-    hasOrgId: !!orgId,
-    nodeEnv: process.env.NODE_ENV
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    organization: process.env.OPENAI_ORG_ID,
   })
-  
-  if (!apiKey) {
-    console.error('OpenAI API key missing')
-    return NextResponse.json(
-      { error: 'API configuration error' },
-      { status: 500 }
-    )
-  }
 
   try {
     const { prompt } = await request.json()
@@ -34,29 +20,23 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log('Initializing OpenAI client...')
-    const openai = new OpenAI({
-      apiKey: apiKey,
-      organization: orgId,
-      dangerouslyAllowBrowser: false
-    })
-
     try {
-      console.log('Making DALL-E request...')
+      console.log('Making DALL-E request with prompt length:', prompt.length)
       const response = await openai.images.generate({
         model: "dall-e-3",
         prompt: prompt,
         n: 1,
         size: "1024x1024",
-        quality: "standard",
         style: "vivid",
-        response_format: "url"
+        response_format: "url",
+        quality: "standard"
       })
 
-      console.log('DALL-E response status:', {
+      console.log('DALL-E response received:', {
         hasResponse: !!response,
         hasData: !!response.data,
-        hasUrl: !!response.data?.[0]?.url
+        hasUrl: !!response.data?.[0]?.url,
+        revised_prompt: response.data?.[0]?.revised_prompt
       })
 
       if (!response.data?.[0]?.url) {
@@ -67,20 +47,23 @@ export async function POST(request: Request) {
         success: true,
         imageUrl: response.data[0].url 
       })
+
     } catch (openaiError: any) {
       console.error('DALL-E API error:', {
+        name: openaiError.name,
         message: openaiError.message,
         status: openaiError.status,
-        response: openaiError.response?.data,
-        stack: openaiError.stack
+        code: openaiError.code,
+        type: openaiError.type
       })
       
       return NextResponse.json({
         success: false,
-        error: 'Image generation failed. Please try again.',
+        error: 'Failed to generate image',
         details: process.env.NODE_ENV === 'development' ? openaiError.message : undefined
       }, { status: 500 })
     }
+
   } catch (error) {
     console.error('Request processing error:', error)
     return NextResponse.json(
