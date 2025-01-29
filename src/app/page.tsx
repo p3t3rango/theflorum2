@@ -408,29 +408,29 @@ export default function HomePage() {
 
     if (phase === 5 && !uiState.hasShownMessage) {
       setUiState(prev => ({ ...prev, hasShownMessage: true }))
-      const message = `Welcome, ${userName}. Which path calls to you?`
-      typewriterEffect(message)
+      setText(`Welcome, ${userName}. Which path calls to you?`)
+      setUiState(prev => ({ ...prev, typewriterComplete: true }))
     }
 
     if (phase === 6) {
-      const message = `The ${characterState.selectedRole}, master of ${characterState.selectedElement}. What drives you?`
-      typewriterEffect(message)
+      setText(`The ${characterState.selectedRole}, master of ${characterState.selectedElement}. What drives you?`)
+      setUiState(prev => ({ ...prev, typewriterComplete: true }))
     }
 
     if (phase === 7) {
-      const message = "What flaws shape your journey?"
-      typewriterEffect(message)
+      setText("What flaws shape your journey?")
+      setUiState(prev => ({ ...prev, typewriterComplete: true }))
     }
 
     if (phase === 8) {
-      const message = "What talents do you bring to the Garden?"
-      typewriterEffect(message)
+      setText("What talents do you bring to the Garden?")
+      setUiState(prev => ({ ...prev, typewriterComplete: true }))
     }
 
     if (phase === 9 && !uiState.hasShownMessage) {
       setUiState(prev => ({ ...prev, hasShownMessage: true }))
-      const message = "Describe your physical appearance."
-      typewriterEffect(message)
+      setText("Describe your physical appearance.")
+      setUiState(prev => ({ ...prev, typewriterComplete: true }))
     }
 
     if (phase === 10) {
@@ -794,9 +794,12 @@ export default function HomePage() {
       <div className="relative z-10 flex min-h-screen min-h-[-webkit-fill-available] flex-col items-center justify-center px-4 py-6 md:p-24 overflow-x-hidden">
         <div className="w-full max-w-[95vw] md:max-w-2xl">
           {!uiState.isGeneratingImage && !uiState.isGeneratingPrompt && phase !== 12 && (
-            <h1 className={`text-4xl font-bold font-mono text-center mb-8 tracking-wide ${phase <= 3 ? 'mt-0' : '-mt-20 md:mt-0'}`}>
+            <h1 className={`text-2xl md:text-4xl font-bold font-mono text-center mb-8 tracking-wide 
+            ${phase <= 3 ? 'mt-0' : 'mt-4 md:-mt-20'}`}>
               {text}
-              {!uiState.typewriterComplete && <span className="animate-blink">|</span>}
+              {phase <= 3 && !uiState.typewriterComplete && (
+                <span className="animate-blink">|</span>
+              )}
             </h1>
           )}
           
