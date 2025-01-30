@@ -8,8 +8,8 @@ const nextConfig = {
   images: {
     domains: ['oaidalleapiprodscus.blob.core.windows.net'],
   },
-  serverRuntimeConfig: {
-    maxDuration: 60,
+  experimental: {
+    runtime: 'edge',
   }
 }
 
