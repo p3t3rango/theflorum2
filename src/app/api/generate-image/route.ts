@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
 
-export const maxDuration = 60 // Set max duration to 60 seconds
+export const runtime = "edge"
 
-export const config = {
-  runtime: 'edge', // Use edge runtime for better performance
-}
+export const maxDuration = 60 // Set max duration to 60 seconds
 
 export async function POST(request: Request) {
   console.log('Starting image generation...')
